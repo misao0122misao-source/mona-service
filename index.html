@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+
+<title>サービス記録</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:#f7f7f8;
+  color:#222;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    "Noto Sans JP",
+    sans-serif;
+}
+
+.header{
+  background:#fff;
+  padding:20px 18px 16px;
+  border-bottom:1px solid #eee;
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+
+.header h1{
+  margin:0;
+  font-size:23px;
+  font-weight:700;
+}
+
+.header-staff{
+  margin-top:7px;
+  color:#777;
+  font-size:14px;
+}
+
+.container{
+  width:100%;
+  max-width:650px;
+  margin:auto;
+  padding:16px;
+}
+
+.card{
+  background:#fff;
+  border-radius:17px;
+  padding:18px;
+  margin-bottom:15px;
+  box-shadow:0 2px 10px rgba(0,0,0,.045);
+}
+
+.field{
+  margin-bottom:18px;
+}
+
+.field:last-child{
+  margin-bottom:0;
+}
+
+label{
+  display:block;
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:8px;
+}
+
+input,
+select,
+textarea{
+  width:100%;
+  min-height:48px;
+  border:1px solid #ddd;
+  border-radius:11px;
+  background:#fff;
+  padding:11px 13px;
+  font-size:16px;
+  color:#222;
+  -webkit-appearance:none;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:none;
+  border-color:#999;
+}
+
+textarea{
+  resize:none;
+}
+
+/* 员工选择 */
+.staff-buttons{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:9px;
+}
+
+.staff-button{
+  min-height:50px;
+  border:1px solid #ddd;
+  border-radius:11px;
+  background:#fff;
+  font-size:16px;
+}
+
+.staff-button.selected{
+  background:#222;
+  color:#fff;
+  border-color:#222;
+}
+
+/* 当前员工 */
+.current-staff-box{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px;
+  background:#f5f5f5;
+  border-radius:12px;
+}
+
+.current-staff-name{
+  font-size:18px;
+  font-weight:700;
+}
+
+.change-staff-button{
+  border:0;
+  background:#fff;
+  border:1px solid #ddd;
+  padding:8px 12px;
+  border-radius:9px;
+  font-size:13px;
+}
+
+/* 支付 */
+.payment-title{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:12px;
+}
+
+.payment-row{
+  display:grid;
+  grid-template-columns:1fr 125px 44px;
+  gap:7px;
+  margin-bottom:10px;
+}
+
+.payment-row select,
+.payment-row input{
+  min-height:46px;
+}
+
+.payment-row input{
+  text-align:right;
+}
+
+.remove-payment{
+  border:none;
+  border-radius:10px;
+  background:#f1f1f1;
+  font-size:20px;
+}
+
+.add-payment{
+  width:100%;
+  min-height:46px;
+  border:1px dashed #bbb;
+  border-radius:11px;
+  background:#fafafa;
+  font-size:15px;
+}
+
+.total-box{
+  margin-top:15px;
+  background:#f5f5f5;
+  border-radius:12px;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.total-label{
+  font-size:15px;
+  color:#666;
+}
+
+.total-number{
+  font-size:23px;
+  font-weight:700;
+}
+
+.save-button{
+  width:100%;
+  min-height:54px;
+  border:0;
+  border-radius:13px;
+  background:#222;
+  color:#fff;
+  font-size:17px;
+  font-weight:700;
+}
+
+.save-button:disabled{
+  opacity:.45;
+}
+
+/* 消息 */
+.message{
+  display:none;
+  padding:13px;
+  margin-bottom:15px;
+  border-radius:11px;
+  font-size:14px;
+}
+
+.message.success{
+  background:#eaf8ef;
+  color:#19703a;
+}
+
+.message.error{
+  background:#fff0f0;
+  color:#c62828;
+}
+
+/* 今日记录 */
+.today-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:5px;
+}
+
+.today-title{
+  font-size:17px;
+  font-weight:700;
+}
+
+.today-count{
+  font-size:13px;
+  color:#888;
+}
+
+.record{
+  padding:15px 0;
+  border-top:1px solid #eee;
+}
+
+.record-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.record-customer{
+  font-size:16px;
+  font-weight:700;
+}
+
+.record-amount{
+  font-size:17px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.record-info{
+  margin-top:6px;
+  color:#777;
+  font-size:13px;
+  line-height:1.7;
+}
+
+.record-payment{
+  margin-top:5px;
+  font-size:13px;
+  color:#555;
+}
+
+.delete-button{
+  margin-top:9px;
+  padding:7px 11px;
+  border:0;
+  border-radius:8px;
+  background:#fff0f0;
+  color:#d33;
+}
+
+.empty{
+  text-align:center;
+  color:#999;
+  padding:22px 0 8px;
+  font-size:14px;
+}
+
+.hidden{
+  display:none !important;
+}
+
+@media(max-width:400px){
+  .payment-row{
+    grid-template-columns:1fr 105px 40px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ==============================
+     顶部
+============================== -->
+
+<div class="header">
+
+  <h1>サービス記録</h1>
+
+  <div class="header-staff">
+    <span id="headerStaff">
+      スタッフを選択してください
+    </span>
+  </div>
+
+</div>
+
+
+<div class="container">
+
+  <div id="message" class="message"></div>
+
+
+  <!-- ==============================
+       第一次选择员工
+  =============================== -->
+
+  <div
+    id="staffSelectCard"
+    class="card"
+  >
+
+    <div class="field">
+
+      <label>スタッフを選択してください</label>
+
+      <div
+        id="staffButtons"
+        class="staff-buttons"
+      >
+
+        <button
+          type="button"
+          class="staff-button"
+          disabled
+        >
+          読み込み中...
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==============================
+       当前员工
+  =============================== -->
+
+  <div
+    id="currentStaffCard"
+    class="card hidden"
+  >
+
+    <div class="current-staff-box">
+
+      <div>
+
+        <div
+          style="
+          font-size:13px;
+          color:#888;
+          margin-bottom:4px;
+          "
+        >
+          担当スタッフ
+        </div>
+
+        <div
+          id="currentStaffName"
+          class="current-staff-name"
+        >
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        class="change-staff-button"
+        onclick="changeStaff()"
+      >
+        スタッフを変更
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==============================
+       服务信息
+  =============================== -->
+
+  <div
+    id="serviceCard"
+    class="hidden"
+  >
+
+    <div class="card">
+
+      <div class="field">
+
+        <label>日付</label>
+
+        <input
+          type="date"
+          id="serviceDate"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label>時間</label>
+
+        <input
+          type="time"
+          id="serviceTime"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label>お客様の名前（任意）</label>
+
+        <input
+          type="text"
+          id="customerName"
+          placeholder="例：田中さん、王小姐"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label>お客様の来源</label>
+
+        <select id="customerSource">
+
+          <option value="">
+            選択してください
+          </option>
+
+          <option value="Hot Pepper">
+            Hot Pepper
+          </option>
+
+          <option value="ネイリー">
+            ネイリー
+          </option>
+
+          <option value="ミニモ">
+            ミニモ
+          </option>
+
+          <option value="微信">
+            微信
+          </option>
+
+          <option value="小紅書">
+            小紅書
+          </option>
+
+          <option value="その他">
+            その他
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <!-- ==============================
+         支払い
+    =============================== -->
+
+    <div class="card">
+
+      <div class="payment-title">
+        支払い
+      </div>
+
+      <div id="payments"></div>
+
+      <button
+        type="button"
+        class="add-payment"
+        onclick="addPayment()"
+      >
+        ＋ 支払いを追加
+      </button>
+
+
+      <div class="total-box">
+
+        <span class="total-label">
+          合計
+        </span>
+
+        <span
+          id="totalAmount"
+          class="total-number"
+        >
+          ¥0
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- ==============================
+         メモ
+    =============================== -->
+
+    <div class="card">
+
+      <div class="field">
+
+        <label>メモ（任意）</label>
+
+        <textarea
+          id="note"
+          rows="3"
+          placeholder="例：リピーター、甲片10本など"
+        ></textarea>
+
+      </div>
+
+
+      <button
+        type="button"
+        id="saveButton"
+        class="save-button"
+        onclick="saveRecord()"
+      >
+        サービス記録を保存
+      </button>
+
+    </div>
+
+
+    <!-- ==============================
+         本日の記録
+    =============================== -->
+
+    <div class="card">
+
+      <div class="today-header">
+
+        <div class="today-title">
+          本日の記録
+        </div>
+
+        <div
+          id="todayCount"
+          class="today-count"
+        >
+          0件
+        </div>
+
+      </div>
+
+
+      <div id="todayRecords">
+
+        <div class="empty">
+          まだ記録がありません
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =================================================
+   Supabase
+================================================= */
+
+const SUPABASE_URL =
+"https://isspcmbqmwgvchkttief.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_5V4yaPwaEzSRXbN054Qyag_MpT7EZtX";
+
+const API_URL =
+SUPABASE_URL + "/rest/v1";
+
+
+/* =================================================
+   API
+================================================= */
+
+function apiFetch(path, options = {}){
+
+  options.headers = {
+
+    "apikey":
+      SUPABASE_KEY,
+
+    "Authorization":
+      "Bearer " + SUPABASE_KEY,
+
+    "Content-Type":
+      "application/json",
+
+    ...(options.headers || {})
+
+  };
+
+  return fetch(
+    API_URL + path,
+    options
+  );
+
+}
+
+
+/* =================================================
+   日本時間
+================================================= */
+
+function getJapanDate(){
+
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:"Asia/Tokyo",
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit"
+      }
+    ).formatToParts(new Date());
+
+
+  const year =
+    parts.find(
+      x=>x.type==="year"
+    ).value;
+
+  const month =
+    parts.find(
+      x=>x.type==="month"
+    ).value;
+
+  const day =
+    parts.find(
+      x=>x.type==="day"
+    ).value;
+
+
+  return `${year}-${month}-${day}`;
+}
+
+
+function getJapanTime(){
+
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        timeZone:"Asia/Tokyo",
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+      }
+    ).formatToParts(new Date());
+
+
+  const hour =
+    parts.find(
+      x=>x.type==="hour"
+    ).value;
+
+  const minute =
+    parts.find(
+      x=>x.type==="minute"
+    ).value;
+
+
+  return `${hour}:${minute}`;
+}
+
+
+/* =================================================
+   状态
+================================================= */
+
+let staffList = [];
+
+let selectedStaffId = null;
+
+
+/* =================================================
+   LocalStorage
+================================================= */
+
+const STAFF_STORAGE_KEY =
+"mona_selected_staff";
+
+
+/* =================================================
+   消息
+================================================= */
+
+function showMessage(text,type){
+
+  const box =
+    document.getElementById(
+      "message"
+    );
+
+
+  box.textContent =
+    text;
+
+  box.className =
+    "message " + type;
+
+  box.style.display =
+    "block";
+
+
+  setTimeout(
+    ()=>{
+      box.style.display =
+        "none";
+    },
+    4000
+  );
+
+}
+
+
+/* =================================================
+   加载员工
+================================================= */
+
+async function loadStaff(){
+
+  try{
+
+    const response =
+      await apiFetch(
+        "/staff?select=id,name,active,sort_order&active=eq.true&order=sort_order.asc"
+      );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        await response.text()
+      );
+
+    }
+
+
+    staffList =
+      await response.json();
+
+
+    renderStaffButtons();
+
+
+    /*
+      查看以前是否保存过员工
+    */
+
+    const savedStaffId =
+      localStorage.getItem(
+        STAFF_STORAGE_KEY
+      );
+
+
+    if(
+      savedStaffId &&
+      staffList.some(
+        staff =>
+          staff.id === savedStaffId
+      )
+    ){
+
+      selectStaff(
+        savedStaffId,
+        false
+      );
+
+    }else{
+
+      showStaffSelection();
+
+    }
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      "スタッフ読み込み失敗：" +
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =================================================
+   员工按钮
+================================================= */
+
+function renderStaffButtons(){
+
+  const container =
+    document.getElementById(
+      "staffButtons"
+    );
+
+
+  container.innerHTML =
+    "";
+
+
+  staffList.forEach(
+    staff=>{
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+
+      button.type =
+        "button";
+
+      button.className =
+        "staff-button";
+
+      button.textContent =
+        staff.name;
+
+
+      button.onclick =
+        ()=>{
+          selectStaff(
+            staff.id,
+            true
+          );
+        };
+
+
+      container.appendChild(
+        button
+      );
+
+    }
+  );
+
+}
+
+
+/* =================================================
+   选择员工
+================================================= */
+
+function selectStaff(
+  staffId,
+  save = true
+){
+
+  selectedStaffId =
+    staffId;
+
+
+  const staff =
+    staffList.find(
+      x=>x.id === staffId
+    );
+
+
+  if(!staff){
+
+    return;
+
+  }
+
+
+  /*
+    保存到 iPhone 浏览器
+  */
+
+  if(save){
+
+    localStorage.setItem(
+      STAFF_STORAGE_KEY,
+      staffId
+    );
+
+  }
+
+
+  /*
+    当前员工
+  */
+
+  document.getElementById(
+    "headerStaff"
+  ).textContent =
+    staff.name +
+    "（スタッフ）";
+
+
+  document.getElementById(
+    "currentStaffName"
+  ).textContent =
+    staff.name;
+
+
+  /*
+    高亮员工
+  */
+
+  document
+    .querySelectorAll(
+      ".staff-button"
+    )
+    .forEach(
+      button=>{
+        button.classList.remove(
+          "selected"
+        );
+      }
+    );
+
+
+  const index =
+    staffList.findIndex(
+      x=>x.id === staffId
+    );
+
+
+  const buttons =
+    document.querySelectorAll(
+      ".staff-button"
+    );
+
+
+  if(buttons[index]){
+
+    buttons[index]
+      .classList
+      .add("selected");
+
+  }
+
+
+  /*
+    显示正式页面
+  */
+
+  document.getElementById(
+    "staffSelectCard"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "currentStaffCard"
+  ).classList.remove(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "serviceCard"
+  ).classList.remove(
+    "hidden"
+  );
+
+
+  /*
+    加载今天记录
+  */
+
+  loadTodayRecords();
+
+}
+
+
+/* =================================================
+   显示员工选择
+================================================= */
+
+function showStaffSelection(){
+
+  document.getElementById(
+    "staffSelectCard"
+  ).classList.remove(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "currentStaffCard"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "serviceCard"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "headerStaff"
+  ).textContent =
+    "スタッフを選択してください";
+
+}
+
+
+/* =================================================
+   切换员工
+================================================= */
+
+function changeStaff(){
+
+  const ok =
+    confirm(
+      "スタッフを変更しますか？"
+    );
+
+
+  if(!ok){
+
+    return;
+
+  }
+
+
+  selectedStaffId =
+    null;
+
+
+  localStorage.removeItem(
+    STAFF_STORAGE_KEY
+  );
+
+
+  showStaffSelection();
+
+}
+
+
+/* =================================================
+   添加支付
+================================================= */
+
+function addPayment(
+  method = "現金",
+  amount = ""
+){
+
+  const container =
+    document.getElementById(
+      "payments"
+    );
+
+
+  const row =
+    document.createElement(
+      "div"
+    );
+
+
+  row.className =
+    "payment-row";
+
+
+  row.innerHTML = `
+
+    <select class="payment-method">
+
+      <option value="現金"
+        ${method==="現金"
+          ? "selected"
+          : ""}>
+        現金
+      </option>
+
+      <option value="PayPay"
+        ${method==="PayPay"
+          ? "selected"
+          : ""}>
+        PayPay
+      </option>
+
+      <option value="クレジットカード"
+        ${method==="クレジットカード"
+          ? "selected"
+          : ""}>
+        クレジットカード
+      </option>
+
+    </select>
+
+
+    <input
+      class="payment-amount"
+      type="number"
+      inputmode="numeric"
+      min="0"
+      placeholder="金額"
+      value="${amount}"
+    >
+
+
+    <button
+      type="button"
+      class="remove-payment"
+      onclick="
+        this.parentElement.remove();
+        calculateTotal();
+      "
+    >
+      ×
+    </button>
+
+  `;
+
+
+  container.appendChild(
+    row
+  );
+
+
+  row
+    .querySelector(
+      ".payment-amount"
+    )
+    .addEventListener(
+      "input",
+      calculateTotal
+    );
+
+
+  calculateTotal();
+
+}
+
+
+/* =================================================
+   计算合计
+================================================= */
+
+function calculateTotal(){
+
+  let total = 0;
+
+
+  document
+    .querySelectorAll(
+      ".payment-amount"
+    )
+    .forEach(
+      input=>{
+
+        total +=
+          Number(
+            input.value
+          ) || 0;
+
+      }
+    );
+
+
+  document.getElementById(
+    "totalAmount"
+  ).textContent =
+    "¥" +
+    total.toLocaleString(
+      "ja-JP"
+    );
+
+}
+
+
+/* =================================================
+   保存服务
+================================================= */
+
+async function saveRecord(){
+
+  const button =
+    document.getElementById(
+      "saveButton"
+    );
+
+
+  if(!selectedStaffId){
+
+    showMessage(
+      "担当スタッフを選択してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const date =
+    document.getElementById(
+      "serviceDate"
+    ).value;
+
+
+  const time =
+    document.getElementById(
+      "serviceTime"
+    ).value;
+
+
+  const customerName =
+    document.getElementById(
+      "customerName"
+    ).value.trim();
+
+
+  const source =
+    document.getElementById(
+      "customerSource"
+    ).value;
+
+
+  const note =
+    document.getElementById(
+      "note"
+    ).value.trim();
+
+
+
+  if(!date){
+
+    showMessage(
+      "日付を入力してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if(!time){
+
+    showMessage(
+      "時間を入力してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if(!source){
+
+    showMessage(
+      "お客様の来源を選択してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+
+  const rows =
+    [
+      ...document.querySelectorAll(
+        ".payment-row"
+      )
+    ];
+
+
+  if(rows.length === 0){
+
+    showMessage(
+      "支払い方法を追加してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+
+  const payments =
+    rows.map(
+      row=>({
+
+        payment_method:
+          row.querySelector(
+            ".payment-method"
+          ).value,
+
+        amount:
+          Number(
+            row.querySelector(
+              ".payment-amount"
+            ).value
+          ) || 0
+
+      })
+    );
+
+
+
+  const total =
+    payments.reduce(
+      (sum,payment)=>
+        sum + payment.amount,
+      0
+    );
+
+
+
+  if(total <= 0){
+
+    showMessage(
+      "支払い金額を入力してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+
+  button.disabled =
+    true;
+
+  button.textContent =
+    "保存中...";
+
+
+  try{
+
+    /*
+      ① 创建服务记录
+    */
+
+    const recordResponse =
+      await apiFetch(
+        "/service_records",
+        {
+          method:"POST",
+
+          headers:{
+            "Prefer":
+              "return=representation"
+          },
+
+          body:
+            JSON.stringify({
+
+              staff_id:
+                selectedStaffId,
+
+              service_date:
+                date,
+
+              service_time:
+                time,
+
+              customer_name:
+                customerName ||
+                null,
+
+              customer_source:
+                source,
+
+              note:
+                note ||
+                null
+
+            })
+        }
+      );
+
+
+    if(!recordResponse.ok){
+
+      throw new Error(
+        await recordResponse.text()
+      );
+
+    }
+
+
+    const records =
+      await recordResponse.json();
+
+
+    const record =
+      records[0];
+
+
+    if(!record){
+
+      throw new Error(
+        "サービス記録を作成できませんでした"
+      );
+
+    }
+
+
+
+    /*
+      ② 创建支付记录
+    */
+
+    const paymentData =
+      payments.map(
+        payment=>({
+
+          service_record_id:
+            record.id,
+
+          payment_method:
+            payment.payment_method,
+
+          amount:
+            payment.amount
+
+        })
+      );
+
+
+    const paymentResponse =
+      await apiFetch(
+        "/service_payments",
+        {
+          method:"POST",
+
+          body:
+            JSON.stringify(
+              paymentData
+            )
+        }
+      );
+
+
+    if(!paymentResponse.ok){
+
+      throw new Error(
+        await paymentResponse.text()
+      );
+
+    }
+
+
+
+    /*
+      保存成功
+    */
+
+    showMessage(
+      "サービス記録を保存しました",
+      "success"
+    );
+
+
+    /*
+      清空客户信息
+    */
+
+    document.getElementById(
+      "customerName"
+    ).value = "";
+
+
+    document.getElementById(
+      "customerSource"
+    ).value = "";
+
+
+    document.getElementById(
+      "note"
+    ).value = "";
+
+
+    /*
+      清空支付
+    */
+
+    document.getElementById(
+      "payments"
+    ).innerHTML = "";
+
+
+    addPayment();
+
+
+    /*
+      自动更新当前时间
+    */
+
+    document.getElementById(
+      "serviceDate"
+    ).value =
+      getJapanDate();
+
+
+    document.getElementById(
+      "serviceTime"
+    ).value =
+      getJapanTime();
+
+
+    calculateTotal();
+
+
+    await loadTodayRecords();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      "保存失敗：" +
+      error.message,
+      "error"
+    );
+
+  }finally{
+
+    button.disabled =
+      false;
+
+    button.textContent =
+      "サービス記録を保存";
+
+  }
+
+}
+
+
+/* =================================================
+   今日记录
+================================================= */
+
+async function loadTodayRecords(){
+
+  if(!selectedStaffId){
+
+    return;
+
+  }
+
+
+  const date =
+    document.getElementById(
+      "serviceDate"
+    ).value;
+
+
+  if(!date){
+
+    return;
+
+  }
+
+
+  try{
+
+    const response =
+      await apiFetch(
+        `/service_records?select=id,staff_id,service_date,service_time,customer_name,customer_source,note&service_date=eq.${encodeURIComponent(date)}&staff_id=eq.${encodeURIComponent(selectedStaffId)}&order=service_time.desc`
+      );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        await response.text()
+      );
+
+    }
+
+
+    const records =
+      await response.json();
+
+
+    const ids =
+      records.map(
+        record=>record.id
+      );
+
+
+    let payments = [];
+
+
+    if(ids.length > 0){
+
+      const paymentResponse =
+        await apiFetch(
+          `/service_payments?select=id,service_record_id,payment_method,amount&service_record_id=in.(${ids.join(",")})`
+        );
+
+
+      if(!paymentResponse.ok){
+
+        throw new Error(
+          await paymentResponse.text()
+        );
+
+      }
+
+
+      payments =
+        await paymentResponse.json();
+
+    }
+
+
+
+    const container =
+      document.getElementById(
+        "todayRecords"
+      );
+
+
+    container.innerHTML =
+      "";
+
+
+    document.getElementById(
+      "todayCount"
+    ).textContent =
+      records.length + "件";
+
+
+
+    records.forEach(
+      record=>{
+
+        const recordPayments =
+          payments.filter(
+            payment =>
+              payment.service_record_id ===
+              record.id
+          );
+
+
+        const total =
+          recordPayments.reduce(
+            (sum,payment)=>
+              sum +
+              Number(
+                payment.amount
+              ),
+            0
+          );
+
+
+        const paymentText =
+          recordPayments
+            .map(
+              payment =>
+                `${payment.payment_method} ¥${Number(payment.amount).toLocaleString("ja-JP")}`
+            )
+            .join(" / ");
+
+
+
+        const div =
+          document.createElement(
+            "div"
+          );
+
+
+        div.className =
+          "record";
+
+
+        div.innerHTML = `
+
+          <div class="record-top">
+
+            <div class="record-customer">
+
+              ${escapeHtml(
+                record.service_time
+                  ? record.service_time.slice(0,5)
+                  : ""
+              )}
+
+              　
+
+              ${escapeHtml(
+                record.customer_name ||
+                "お客様"
+              )}
+
+            </div>
+
+
+            <div class="record-amount">
+
+              ¥${total.toLocaleString(
+                "ja-JP"
+              )}
+
+            </div>
+
+          </div>
+
+
+          <div class="record-info">
+
+            ${escapeHtml(
+              record.customer_source
+            )}
+
+          </div>
+
+
+          <div class="record-payment">
+
+            ${escapeHtml(
+              paymentText
+            )}
+
+          </div>
+
+
+          ${
+            record.note
+            ?
+            `
+              <div class="record-info">
+                ${escapeHtml(record.note)}
+              </div>
+            `
+            :
+            ""
+          }
+
+
+          <button
+            type="button"
+            class="delete-button"
+            onclick="
+              deleteRecord(${record.id})
+            "
+          >
+            削除
+          </button>
+
+        `;
+
+
+        container.appendChild(
+          div
+        );
+
+      }
+    );
+
+
+
+    if(records.length === 0){
+
+      container.innerHTML = `
+        <div class="empty">
+          本日の記録はありません
+        </div>
+      `;
+
+    }
+
+
+  }catch(error){
+
+    console.error(error);
+
+    document.getElementById(
+      "todayRecords"
+    ).innerHTML = `
+      <div class="empty">
+        読み込みに失敗しました
+      </div>
+    `;
+
+  }
+
+}
+
+
+/* =================================================
+   删除记录
+================================================= */
+
+async function deleteRecord(id){
+
+  const ok =
+    confirm(
+      "このサービス記録を削除しますか？"
+    );
+
+
+  if(!ok){
+
+    return;
+
+  }
+
+
+  try{
+
+    const response =
+      await apiFetch(
+        `/service_records?id=eq.${id}`,
+        {
+          method:"DELETE"
+        }
+      );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        await response.text()
+      );
+
+    }
+
+
+    showMessage(
+      "削除しました",
+      "success"
+    );
+
+
+    await loadTodayRecords();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      "削除失敗：" +
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =================================================
+   HTML安全处理
+================================================= */
+
+function escapeHtml(value){
+
+  if(
+    value === null ||
+    value === undefined
+  ){
+
+    return "";
+
+  }
+
+
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* =================================================
+   日期变化
+================================================= */
+
+document
+  .getElementById(
+    "serviceDate"
+  )
+  .addEventListener(
+    "change",
+    loadTodayRecords
+  );
+
+
+/* =================================================
+   初始化
+================================================= */
+
+async function init(){
+
+  /*
+    日本日期
+  */
+
+  document.getElementById(
+    "serviceDate"
+  ).value =
+    getJapanDate();
+
+
+  /*
+    日本时间
+  */
+
+  document.getElementById(
+    "serviceTime"
+  ).value =
+    getJapanTime();
+
+
+  /*
+    默认一行支付
+  */
+
+  addPayment();
+
+
+  /*
+    加载员工
+  */
+
+  await loadStaff();
+
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>
