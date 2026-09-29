@@ -1131,56 +1131,157 @@ function addPayment(
     "payment-row";
 
 
-  row.innerHTML = `
+  /*
+    支払い方法
+    ★ 5種類
+  */
 
-    <select class="payment-method">
+  const select =
+    document.createElement(
+      "select"
+    );
 
-      <option value="現金"
-        ${method==="現金"
-          ? "selected"
-          : ""}>
-        現金
-      </option>
-
-      <option value="PayPay"
-        ${method==="PayPay"
-          ? "selected"
-          : ""}>
-        PayPay
-      </option>
-
-      <option value="クレジットカード"
-        ${method==="クレジットカード"
-          ? "selected"
-          : ""}>
-        クレジットカード
-      </option>
-
-    </select>
+  select.className =
+    "payment-method";
 
 
-    <input
-      class="payment-amount"
-      type="number"
-      inputmode="numeric"
-      min="0"
-      placeholder="金額"
-      value="${amount}"
-    >
+  const paymentMethods = [
+    "現金",
+    "PayPay",
+    "クレジットカード",
+    "ポイント",
+    "スマート"
+  ];
 
 
-    <button
-      type="button"
-      class="remove-payment"
-      onclick="
-        this.parentElement.remove();
-        calculateTotal();
-      "
-    >
-      ×
-    </button>
+  paymentMethods.forEach(
+    function(paymentMethod){
 
-  `;
+      const option =
+        document.createElement(
+          "option"
+        );
+
+
+      option.value =
+        paymentMethod;
+
+
+      option.textContent =
+        paymentMethod;
+
+
+      if(
+        paymentMethod === method
+      ){
+
+        option.selected =
+          true;
+
+      }
+
+
+      select.appendChild(
+        option
+      );
+
+    }
+  );
+
+
+  /*
+    金額
+  */
+
+  const input =
+    document.createElement(
+      "input"
+    );
+
+
+  input.className =
+    "payment-amount";
+
+
+  input.type =
+    "number";
+
+
+  input.inputMode =
+    "numeric";
+
+
+  input.min =
+    "0";
+
+
+  input.placeholder =
+    "金額";
+
+
+  input.value =
+    amount;
+
+
+  /*
+    删除
+  */
+
+  const removeButton =
+    document.createElement(
+      "button"
+    );
+
+
+  removeButton.type =
+    "button";
+
+
+  removeButton.className =
+    "remove-payment";
+
+
+  removeButton.textContent =
+    "×";
+
+
+  removeButton.addEventListener(
+    "click",
+    function(){
+
+      row.remove();
+
+      calculateTotal();
+
+    }
+  );
+
+
+  /*
+    输入金额时重新计算
+  */
+
+  input.addEventListener(
+    "input",
+    calculateTotal
+  );
+
+
+  /*
+    加入这一行
+  */
+
+  row.appendChild(
+    select
+  );
+
+  row.appendChild(
+    input
+  );
+
+  row.appendChild(
+    removeButton
+  );
 
 
   container.appendChild(
@@ -1188,20 +1289,9 @@ function addPayment(
   );
 
 
-  row
-    .querySelector(
-      ".payment-amount"
-    )
-    .addEventListener(
-      "input",
-      calculateTotal
-    );
-
-
   calculateTotal();
 
 }
-
 
 /* =================================================
    计算合计
