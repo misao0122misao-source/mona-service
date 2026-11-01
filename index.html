@@ -12,7 +12,7 @@ body{margin:0;background:#f7f7f8;color:#222;font-family:-apple-system,BlinkMacSy
 .header h1{margin:0;font-size:23px;font-weight:700}
 .header-staff{margin-top:7px;color:#777;font-size:14px}
 .container{width:100%;max-width:650px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:17px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,.045)}
+.card,.monthly-sales-card{background:#fff;border-radius:17px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,.045)}
 .field{margin-bottom:18px}
 .field:last-child{margin-bottom:0}
 label{display:block;font-size:14px;font-weight:600;margin-bottom:8px}
@@ -51,14 +51,10 @@ textarea{resize:none}
 .delete-button{margin-top:9px;padding:7px 11px;border:0;border-radius:8px;background:#fff0f0;color:#d33}
 .empty{text-align:center;color:#999;padding:22px 0 8px;font-size:14px}
 .hidden{display:none!important}
-
-/* 当月売上 */
-.monthly-sales-card{background:#fff;border-radius:17px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,.045)}
 .monthly-sales-label{font-size:14px;color:#777;font-weight:600}
 .monthly-sales-amount{font-size:30px;font-weight:800;margin-top:8px;letter-spacing:.2px}
 .monthly-sales-meta{font-size:13px;color:#888;margin-top:6px}
 .monthly-sales-error{font-size:12px;color:#c62828;margin-top:7px}
-
 @media(max-width:400px){
   .payment-row{grid-template-columns:1fr 105px 40px}
 }
@@ -79,8 +75,16 @@ textarea{resize:none}
   <div id="monthlySalesCard" class="monthly-sales-card hidden">
     <div id="monthlySalesLabel" class="monthly-sales-label">当月売上</div>
     <div id="monthlySalesAmount" class="monthly-sales-amount">¥0</div>
-    <div id="monthlySalesMeta" class="monthly-sales-meta">入账件数：0件</div>
+    <div id="monthlySalesMeta" class="monthly-sales-meta">記録件数：0件</div>
     <div id="monthlySalesError" class="monthly-sales-error hidden"></div>
+  </div>
+
+  <!-- 先月売上 -->
+  <div id="previousSalesCard" class="monthly-sales-card hidden">
+    <div id="previousSalesLabel" class="monthly-sales-label">先月売上</div>
+    <div id="previousSalesAmount" class="monthly-sales-amount">¥0</div>
+    <div id="previousSalesMeta" class="monthly-sales-meta">記録件数：0件</div>
+    <div id="previousSalesError" class="monthly-sales-error hidden"></div>
   </div>
 
   <div id="message" class="message"></div>
@@ -239,88 +243,105 @@ function showMessage(text, type) {
   }, 4000);
 }
 
-/* 当月の開始日・翌月の開始日 */
-function getJapanMonthRange() {
+/* 月の範囲を取得：offset 0＝今月、-1＝先月 */
+function getMonthRange(offset = 0) {
   const today = getJapanDate();
-  const year = Number(today.slice(0, 4));
-  const month = Number(today.slice(5, 7));
+  const currentYear = Number(today.slice(0, 4));
+  const currentMonth = Number(today.slice(5, 7));
 
-  const start = `${year}-${String(month).padStart(2, "0")}-01`;
-  const nextYear = month === 12 ? year + 1 : year;
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const end = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+  const date = new Date(currentYear, currentMonth - 1 + offset, 1);
+  const nextDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
-  return { start, end, year, month };
+  return {
+    start: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`,
+    end: `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-01`,
+    year: date.getFullYear(),
+    month: date.getMonth() + 1
+  };
 }
 
-/* 当月売上を読み込む */
-async function loadMonthlySales() {
-  const card = document.getElementById("monthlySalesCard");
-  const amountEl = document.getElementById("monthlySalesAmount");
-  const labelEl = document.getElementById("monthlySalesLabel");
-  const metaEl = document.getElementById("monthlySalesMeta");
-  const errorEl = document.getElementById("monthlySalesError");
+/* 指定月の売上を取得 */
+async function fetchMonthlySales(staffId, range) {
+  const recordsResponse = await apiFetch(
+    `/service_records?select=id&staff_id=eq.${encodeURIComponent(staffId)}&service_date=gte.${range.start}&service_date=lt.${range.end}`
+  );
 
-  if (!selectedStaffId) {
-    card.classList.add("hidden");
-    return;
+  if (!recordsResponse.ok) {
+    throw new Error(await recordsResponse.text());
   }
 
-  card.classList.remove("hidden");
-  errorEl.classList.add("hidden");
-  errorEl.textContent = "";
+  const records = await recordsResponse.json();
+  const ids = records.map(record => record.id);
 
-  const range = getJapanMonthRange();
+  let total = 0;
 
-  labelEl.textContent = `${range.year}年${range.month}月の売上`;
-  amountEl.textContent = "集計中...";
-  metaEl.textContent = "入账件数を集計しています";
+  /* 支払い記録を100件ずつ取得 */
+  for (let i = 0; i < ids.length; i += 100) {
+    const batch = ids.slice(i, i + 100);
 
-  try {
-    const recordsResponse = await apiFetch(
-      `/service_records?select=id&staff_id=eq.${encodeURIComponent(selectedStaffId)}&service_date=gte.${range.start}&service_date=lt.${range.end}`
+    const paymentResponse = await apiFetch(
+      `/service_payments?select=amount&service_record_id=in.(${batch.join(",")})`
     );
 
-    if (!recordsResponse.ok) {
-      throw new Error(await recordsResponse.text());
+    if (!paymentResponse.ok) {
+      throw new Error(await paymentResponse.text());
     }
 
-    const records = await recordsResponse.json();
-    const ids = records.map(record => record.id);
+    const paymentRecords = await paymentResponse.json();
 
-    let total = 0;
-
-    /* 支払い記録を100件ずつ取得 */
-    for (let i = 0; i < ids.length; i += 100) {
-      const batch = ids.slice(i, i + 100);
-
-      const paymentResponse = await apiFetch(
-        `/service_payments?select=amount&service_record_id=in.(${batch.join(",")})`
-      );
-
-      if (!paymentResponse.ok) {
-        throw new Error(await paymentResponse.text());
-      }
-
-      const paymentRecords = await paymentResponse.json();
-
-      total += paymentRecords.reduce(
-        (sum, payment) => sum + (Number(payment.amount) || 0),
-        0
-      );
-    }
-
-    amountEl.textContent = "¥" + total.toLocaleString("ja-JP");
-    metaEl.textContent = `入账件数：${records.length}件`;
-
-  } catch (error) {
-    console.error("当月売上の読み込みに失敗しました", error);
-
-    amountEl.textContent = "取得できません";
-    metaEl.textContent = "売上データを読み込めませんでした";
-    errorEl.textContent = "通信状況を確認して、ページを再読み込みしてください。";
-    errorEl.classList.remove("hidden");
+    total += paymentRecords.reduce(
+      (sum, payment) => sum + (Number(payment.amount) || 0),
+      0
+    );
   }
+
+  return {
+    total,
+    count: records.length
+  };
+}
+
+/* 当月・先月の売上カードを更新 */
+async function updateSalesCard(staffId, range, prefix) {
+  const card = document.getElementById(prefix + "Card");
+  const label = document.getElementById(prefix + "Label");
+  const amount = document.getElementById(prefix + "Amount");
+  const meta = document.getElementById(prefix + "Meta");
+  const error = document.getElementById(prefix + "Error");
+
+  card.classList.remove("hidden");
+  error.classList.add("hidden");
+  error.textContent = "";
+
+  label.textContent = `${range.year}年${range.month}月の売上`;
+  amount.textContent = "集計中...";
+  meta.textContent = "売上を集計しています";
+
+  try {
+    const result = await fetchMonthlySales(staffId, range);
+
+    amount.textContent = "¥" + result.total.toLocaleString("ja-JP");
+    meta.textContent = `記録件数：${result.count}件`;
+
+  } catch (err) {
+    console.error(err);
+    amount.textContent = "取得できません";
+    meta.textContent = "売上データを読み込めませんでした";
+    error.textContent = err.message;
+    error.classList.remove("hidden");
+  }
+}
+
+/* 当月と先月の売上を読み込む */
+async function loadMonthlySales() {
+  if (!selectedStaffId) return;
+
+  const staffId = selectedStaffId;
+
+  await Promise.all([
+    updateSalesCard(staffId, getMonthRange(0), "monthlySales"),
+    updateSalesCard(staffId, getMonthRange(-1), "previousSales")
+  ]);
 }
 
 /* スタッフを読み込む */
@@ -339,7 +360,7 @@ async function loadStaff() {
 
     const savedStaffId = localStorage.getItem(STAFF_STORAGE_KEY);
 
-    if (savedStaffId && staffList.some(staff => staff.id === savedStaffId)) {
+    if (savedStaffId && staffList.some(staff => String(staff.id) === String(savedStaffId))) {
       selectStaff(savedStaffId, false);
     } else {
       showStaffSelection();
@@ -372,11 +393,11 @@ function renderStaffButtons() {
 function selectStaff(staffId, save = true) {
   selectedStaffId = staffId;
 
-  const staff = staffList.find(x => x.id === staffId);
+  const staff = staffList.find(x => String(x.id) === String(staffId));
   if (!staff) return;
 
   if (save) {
-    localStorage.setItem(STAFF_STORAGE_KEY, staffId);
+    localStorage.setItem(STAFF_STORAGE_KEY, String(staffId));
   }
 
   document.getElementById("headerStaff").textContent = staff.name + "（スタッフ）";
@@ -386,7 +407,7 @@ function selectStaff(staffId, save = true) {
     button.classList.remove("selected");
   });
 
-  const index = staffList.findIndex(x => x.id === staffId);
+  const index = staffList.findIndex(x => String(x.id) === String(staffId));
   const buttons = document.querySelectorAll(".staff-button");
 
   if (buttons[index]) {
@@ -407,6 +428,7 @@ function showStaffSelection() {
   document.getElementById("currentStaffCard").classList.add("hidden");
   document.getElementById("serviceCard").classList.add("hidden");
   document.getElementById("monthlySalesCard").classList.add("hidden");
+  document.getElementById("previousSalesCard").classList.add("hidden");
   document.getElementById("headerStaff").textContent = "スタッフを選択してください";
 }
 
@@ -653,7 +675,7 @@ async function loadTodayRecords() {
 
     records.forEach(record => {
       const recordPayments = payments.filter(
-        payment => payment.service_record_id === record.id
+        payment => String(payment.service_record_id) === String(record.id)
       );
 
       const total = recordPayments.reduce(
@@ -672,7 +694,6 @@ async function loadTodayRecords() {
         <div class="record-top">
           <div class="record-customer">
             ${escapeHtml(record.service_time ? record.service_time.slice(0,5) : "")}
-            　
             ${escapeHtml(record.customer_name || "お客様")}
           </div>
           <div class="record-amount">
@@ -694,10 +715,14 @@ async function loadTodayRecords() {
           </div>
         ` : ""}
 
-        <button type="button" class="delete-button" onclick="deleteRecord(${record.id})">
+        <button type="button" class="delete-button">
           削除
         </button>
       `;
+
+      div.querySelector(".delete-button").addEventListener("click", () => {
+        deleteRecord(record.id);
+      });
 
       container.appendChild(div);
     });
@@ -724,7 +749,7 @@ async function deleteRecord(id) {
 
   try {
     const response = await apiFetch(
-      `/service_records?id=eq.${id}`,
+      `/service_records?id=eq.${encodeURIComponent(id)}`,
       { method: "DELETE" }
     );
 
